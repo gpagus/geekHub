@@ -1,13 +1,18 @@
 package es.geekhub.controllers;
 
+import es.geekhub.beans.Filtros;
 import es.geekhub.beans.Producto;
 import es.geekhub.dao.IProductoDAO;
 import es.geekhub.daofactory.DAOFactory;
 import es.geekhub.models.Utils;
+
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.Cookie;
@@ -86,10 +91,52 @@ public class FrontController extends HttpServlet {
                     Utils.actualizarCookie(response, carritoVacio);
                     break;
 
+                case "filtro":
+
+                    Filtros filtros = new Filtros();
+
+                    // Obtener categorías seleccionadas
+                    filtros.setPriceRange(request.getParameter("price"));
+                    String[] categoriasSeleccionadas = request.getParameterValues("categorias");
+                    String[] marcasSeleccionadas = request.getParameterValues("marcas");
+
+                    if (categoriasSeleccionadas != null) {
+                        List<Byte> idsCategoria = new ArrayList<>();
+                        for (String categoriaId : categoriasSeleccionadas) {
+                            try {
+
+                                Byte categoriaIdByte = Byte.valueOf(categoriaId);  // Parsear el ID de la categoría
+                                idsCategoria.add(categoriaIdByte); // Añadimos
+                            } catch (NumberFormatException e) {
+                                System.out.println("Formato inválido en categoriaSeleccionada: " + categoriaId);
+                            }
+                        }
+                        filtros.setCategorias(idsCategoria); // Setear lista de categorías seleccionadas en el filtro
+                    }
+
+                    if (marcasSeleccionadas != null) {
+                        List<String> marcas = new ArrayList<>();
+                        marcas.addAll(Arrays.asList(marcasSeleccionadas));
+                        filtros.setMarcas(marcas); // Setear lista de marcas seleccionadas en el filtro
+                    }
+
+                    List<Producto> productos;
+
+                    // Obtener DAO de productos
+                    DAOFactory daof = new DAOFactory();
+                    IProductoDAO daop = daof.getProductoDAO();
+
+                    // Obtener productos filtrados
+                    productos = daop.obtenerProductosPorFiltros(filtros);
+
+                    // Guardar productos y filtros en el request y reenviar a la vista
+                    request.setAttribute("productos", productos);
+                    break;
+
             }
         }
 
-        request.getRequestDispatcher(url).forward(request, response);
+        request.getRequestDispatcher(url)
+                .forward(request, response);
     }
-
 }

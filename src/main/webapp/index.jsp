@@ -10,7 +10,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <jsp:include page="/INC/metas.inc"/>
-        <meta http-equiv="refresh" content="1;URL=${contexto}/FrontController">
+        <meta http-equiv="refresh" content="2;URL=${contexto}/FrontController">
         <link rel="stylesheet" href="${estilo}"/>
         <title>Página de Inicio</title>
     </head>

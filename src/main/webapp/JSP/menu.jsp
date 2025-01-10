@@ -32,28 +32,80 @@
 
             <main class="main-content">
                 <aside class="filters">
+                    <form action="${contexto}/FrontController" method="POST" class="filter-form">
+                    
+                    <!-- Filtro de Categorías -->
+                    <div class="filter-section">
+                        <h3>Categorías</h3>
+                        <c:forEach var="categoria" items="${categorias}">
+                            <div>
+                                <label>
+                                    <input type="checkbox" name="categorias" value="${categoria.idCategoria}" />
+                                    ${categoria.nombre}
+                                </label>
+                            </div>
+                        </c:forEach>
+                    </div>
+
+                    <!-- Filtro de Marcas -->
+                    <div class="filter-section">
+                        <h3>Marcas</h3>
+                        <c:forEach var="marca" items="${marcas}">
+                            <div>
+                                <label>
+                                    <input type="checkbox" name="marcas" value="${marca}" />
+                                    ${marca}
+                                </label>
+                            </div>
+                        </c:forEach>
+                    </div>
+                    
+                    <!-- Filtro por precio -->
                     <div class="filter-section">
                         <h3>Precio</h3>
-                        <input type="range" min="0" max="1000" step="50" />
-                        <div>0€ - 1000€</div>
+                        <div>
+                            <label>
+                                <input type="radio" name="price" value="0-50" />
+                                0€ - 50€
+                            </label>
+                        </div>
+                        <div>
+                            <label>
+                                <input type="radio" name="price" value="51-100" />
+                                51€ - 100€
+                            </label>
+                        </div>
+                        <div>
+                            <label>
+                                <input type="radio" name="price" value="101-500" />
+                                101€ - 500€
+                            </label>
+                        </div>
+                        <div>
+                            <label>
+                                <input type="radio" name="price" value="501-1000" />
+                                501€ - 1000€
+                            </label>
+                        </div>
+                        <div>
+                            <label>
+                                <input type="radio" name="price" value="1001-9999" />
+                                Más de 1000€
+                            </label>
+                        </div>
                     </div>
 
-                    <div class="filter-section">
-                        <h3>Categoría</h3>
-                        <div><input type="checkbox" /> Procesadores</div>
-                        <div><input type="checkbox" /> Tarjetas Gráficas</div>
-                        <div><input type="checkbox" /> Memoria RAM</div>
+                    <!-- Botones para aplicar/borrar filtros -->
+                    <div class="filter-buttons">
+                        <input type="hidden" name="accion" value="filtro">
+                        <button type="submit" class="filter-submit">Filtrar</button>
+                        <a href="${contexto}/FrontController" class="clear-filters">Borrar Filtros</a>
                     </div>
+                </form>
 
-                    <div class="filter-section">
-                        <h3>Marca</h3>
-                        <div><input type="checkbox" /> AMD</div>
-                        <div><input type="checkbox" /> Intel</div>
-                        <div><input type="checkbox" /> NVIDIA</div>
-                    </div>
-                </aside>
+            </aside>
 
-                <section class="products">
+            <section class="products">
                 <c:forEach var="producto" items="${productos}">
                     <div class="product-card">
                         <img src="${contexto}/IMG/productos/${producto.imagen}.jpg" alt="${producto.nombre}" class="product-image">
@@ -70,3 +122,4 @@
         </main>
     </body>
 </html>
+

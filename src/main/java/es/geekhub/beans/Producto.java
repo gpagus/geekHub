@@ -1,10 +1,12 @@
 package es.geekhub.beans;
 
+import java.io.Serializable;
+
 /**
  *
  * @author agp00
  */
-public class Producto {
+public class Producto implements Serializable{
     private short idProducto;
     private Categoria categoria;
     private String nombre;

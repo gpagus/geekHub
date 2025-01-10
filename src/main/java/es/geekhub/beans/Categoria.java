@@ -1,21 +1,23 @@
 package es.geekhub.beans;
 
+import java.io.Serializable;
+
 /**
  *
  * @author agp00
  */
-public class Categoria {
+public class Categoria implements Serializable {
 
-    private byte idCategoria;
+    private Byte idCategoria;
     private String nombre;
     private String imagen;
 
     // Getters and Setters
-    public byte getIdCategoria() {
+    public Byte getIdCategoria() {
         return idCategoria;
     }
 
-    public void setIdCategoria(byte idCategoria) {
+    public void setIdCategoria(Byte idCategoria) {
         this.idCategoria = idCategoria;
     }
 
