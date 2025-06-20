@@ -43,7 +43,8 @@
 .form-container input[type="text"],
 .form-container input[type="email"],
 .form-container input[type="password"],
-.form-container input[type="file"] {
+.form-container input[type="file"],
+.form-container input[type="tel"]{
     padding: 10px;
     border: 1px solid var(--color-gris-oscuro);
     border-radius: 5px;
@@ -65,6 +66,8 @@
 }
 
 .form-button {
+    width: max-content;
+    margin-left: 80%;
     padding: 12px 20px;
     background-color: var(--color-naranja);
     color: var(--color-blanco);
@@ -91,3 +94,35 @@
     outline: none;
     box-shadow: 0 0 5px var(--color-naranja);
 }
+
+.required-field-notice {
+    margin-bottom: 20px;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.required {
+    color: #e32;
+    margin-left: 4px;
+}
+
+.optional {
+    color: #666;
+    font-size: 0.9em;
+    margin-left: 4px;
+}
+
+#avatar-preview {
+    display: flex;
+    justify-content: center;
+}
+
+#avatar-preview img {
+    padding: 10px;
+    width: 40%;
+    border: 1px solid var(--color-gris-oscuro);
+    border-radius: 10px;
+    max-width: 150px;
+    max-height: 150px;
+}
+

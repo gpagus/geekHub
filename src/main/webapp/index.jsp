@@ -10,8 +10,9 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <jsp:include page="/INC/metas.inc"/>
-        <meta http-equiv="refresh" content="2;URL=${contexto}/FrontController">
+        <meta http-equiv="refresh" content="3;URL=${contexto}/FrontController">
         <link rel="stylesheet" href="${estilo}"/>
+        <link rel="icon" type="image/png" href="${contexto}/IMG/logo.png">
         <title>Página de Inicio</title>
     </head>
     <body>
@@ -19,9 +20,8 @@
             <img src="./IMG/logo.png" alt="logo"/>
             <div>
                 <h1>GeekHub</h1>
-                <h3><em>Tu destino para componentes de PC al mejor precio</em></h3>
+                <h3 style="font-style: italic;">Tu destino para componentes de PC al mejor precio</h3>
             </div>
-
         </header>
     </body>
 </html>

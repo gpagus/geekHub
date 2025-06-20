@@ -1,14 +1,21 @@
-
 package es.geekhub.beans;
 
 import java.io.Serializable;
 import java.util.List;
 
 /**
- *
+ * Representa los filtros aplicados en la búsqueda de productos.
+ * 
+ * Incluye una lista de IDs de categorías, una lista de marcas seleccionadas,
+ * y un rango de precios en formato de texto.
+ * 
+ * Proporciona métodos auxiliares para extraer los valores mínimo y máximo 
+ * del rango de precios.
+ * 
  * @author agp00
  */
 public class Filtros implements Serializable {
+
     private List<Byte> categorias; // IDs de las categorías seleccionadas
     private List<String> marcas;   // Marcas seleccionadas
     private String priceRange;     // Mantén el rango de precio como está
@@ -37,19 +44,17 @@ public class Filtros implements Serializable {
         this.priceRange = priceRange;
     }
 
-    
-
     // Métodos auxiliares para obtener valores mínimos y máximos del rango de precios
     public Double getPrecioMin() {
         if (priceRange != null && priceRange.contains("-")) {
-            return Double.parseDouble(priceRange.split("-")[0]);
+            return Double.valueOf(priceRange.split("-")[0]);
         }
         return null;
     }
 
     public Double getPrecioMax() {
         if (priceRange != null && priceRange.contains("-")) {
-            return Double.parseDouble(priceRange.split("-")[1]);
+            return Double.valueOf(priceRange.split("-")[1]);
         }
         return null;
     }

@@ -11,6 +11,8 @@ import java.util.List;
 public interface IProductoDAO {
     public List<Producto> productosAleatorios();
     public List<Producto> obtenerProductosPorFiltros(Filtros filtros);
+    public List<Producto> buscarProductos(String query);
     public List<String> obtenerMarcasDisponibles();
+    public Producto getProductoById(Short idProducto);
     public void closeConnection();
 }

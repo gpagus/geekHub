@@ -14,8 +14,6 @@
     --color-amarillo-suave: #ffd54f;
     --color-azul: #007bff;
     --color-verde-pastel: #77dd77;
-
-
 }
 
 body {
@@ -23,21 +21,23 @@ body {
 }
 
 header{
-    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
     background-color: var(--color-gris-oscuro);
-    padding: 5px 20px 5px 20px;
-    align-items: center;
+    padding: 5px 20px;
+    display: flex;
     justify-content: space-between;
+    align-items: center;
 }
 
 .header {
     display: flex;
-    justify-content: center;
-    align-items: center;
     gap: 30px;
     color: var(--color-naranja);
     background-color: white;
     padding: 1rem;
+    flex-direction: column;
 }
 .navbar {
     background: var(--color-gris-oscuro);
@@ -54,21 +54,112 @@ header{
     display: flex;
     padding: 1rem;
     gap: 2rem;
+    margin-left: 270px;
 }
+
+.main-content-carrito {
+    display: flex;
+    padding: 1rem;
+    gap: 2rem;
+    padding: 70px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.main-content
 .filters {
     width: 250px;
     background: #f5f6fa;
     padding: 1rem;
     border-radius: 8px;
+    position: fixed;
+    top: 100px;
+    left: 1rem;
+    height: calc(100vh - 120px);
+    overflow-y: auto;
 }
 .filter-section {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
+    background: var(--color-blanco);
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: visible;
+    position: relative;
 }
+
+.filter-section summary {
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    background-color: var(--color-gris-claro);
+    user-select: none;
+    position: relative;
+}
+
+.filter-section summary:hover {
+    background-color: #e9ecef;
+}
+
+.filter-section h3 {
+    display: inline;
+    margin: 0;
+    font-size: 1rem;
+    color: var(--color-gris-oscuro);
+}
+
+.filter-section summary::-webkit-details-marker {
+    display: none;
+}
+
+.filter-section summary::after {
+    content: '▼';
+    position: absolute;
+    right: 1rem;
+    color: var(--color-gris-oscuro);
+    font-size: 0.8em;
+    transition: transform 0.2s ease;
+}
+
+.filter-section[open] summary::after {
+    transform: rotate(180deg);
+}
+
+.filter-content {
+    padding: 1rem;
+    background-color: var(--color-blanco);
+    border: 1px solid #ddd;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.filter-content div {
+    margin-bottom: 0.8rem;
+}
+
+.filter-content label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-gris-oscuro);
+    cursor: pointer;
+}
+
+.filter-content input[type="checkbox"],
+.filter-content input[type="radio"] {
+    cursor: pointer;
+}
+
+details > summary {
+    list-style: none;
+}
+
 .products {
+    width: 100%;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 1rem;
-    flex: 1;
 }
 .product-card {
     border: 1px solid #ddd;
@@ -89,9 +180,23 @@ header{
     margin: 0.5rem 0;
 }
 
-header > img{
-    width: 80px;
+.product-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
 }
+
+header > a > img {
+    width: 80px;
+    transition: all 0.3s ease;
+}
+
+header > a > img:hover {
+    transform: scale(1.1);
+    filter: brightness(1.3);
+}
+
 
 .header img{
     width: 100px;
@@ -106,18 +211,32 @@ header form button:first-child {
     background-color: var(--color-verde-pastel);
 }
 
-header>div {
+.header>div {
     display: flex;
+    gap: 10px;
+    flex-direction: column;
     align-items: center;
-    gap: 40px;
 }
-header button {
+header button, #cesta-btn {
     background-color: var(--color-naranja);
     color: white;
     padding: 10px 20px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
+}
+
+#cesta-btn{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.search-container{
+    gap: 5px;
+    display: flex;
+    flex-direction: row-reverse;
+    margin-right: 10px;
 }
 
 #search-bar input {
@@ -130,9 +249,21 @@ header button {
     background-color: white;
 }
 
+#search-btn {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+}
+#search-btn.visible {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
 
 .cart-table {
-    width: 100%;
+    width: 50%;
     border-collapse: collapse;
     margin-bottom: 20px;
 }
@@ -178,7 +309,7 @@ header button {
     background-color: #45a049;
 }
 
-.cart-table .cart-actions button:nth-child(3) { 
+.cart-table .cart-actions button:nth-child(3) {
     background-color: #f44336;
 }
 
@@ -186,7 +317,6 @@ header button {
     background-color: #e53935;
 }
 
-/* Total */
 .cart-total {
     font-size: 1.2em;
     font-weight: bold;
@@ -218,8 +348,8 @@ header button {
     background-color: #e53935;
 }
 
-form button[name="checkout"] {
-    background-color: #4CAF50; 
+form button[value="finalizar"] {
+    background-color: #4CAF50;
     color: white;
     font-size: 16px;
     padding: 10px 20px;
@@ -229,13 +359,9 @@ form button[name="checkout"] {
     transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-form button[name="checkout"]:hover {
-    background-color: #45a049;
-    transform: scale(1.05); 
-}
 
-form button[name="accion"][value="limpiar"] {
-    background-color: #f44336; /* Rojo */
+form button[name="accion"][value="limpiarCarrito"] {
+    background-color: #f44336;
     color: white;
     font-size: 16px;
     padding: 10px 20px;
@@ -245,29 +371,16 @@ form button[name="accion"][value="limpiar"] {
     transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
-form button[name="accion"][value="limpiar"]:hover {
-    background-color: #e53935;
-    transform: scale(1.05); 
-}
 
-p {
-    text-align: center;
-    font-size: 1.1em;
-    color: #555;
-}
-
-button:disabled {         
-    cursor: not-allowed;  
-    opacity: 0.6;   
-}
 
 .filter-buttons {
     display: flex;
     gap: 10px;
     margin-top: 10px;
+    margin-top: 1.5rem;
 }
 
-.filter-submit {
+.submit-btn {
     background-color: var(--color-azul);
     color: #fff;
     border: none;
@@ -277,12 +390,12 @@ button:disabled {
     font-size: 14px;
 }
 
-.filter-submit:hover {
+.submit-btn:hover {
     background-color: #0056b3;
 }
 
 .clear-filters {
-    background-color: #f2d2d;
+    background-color: #f2f2f2;
     color: #333;
     text-decoration: none;
     padding: 8px 12px;
@@ -296,6 +409,244 @@ button:disabled {
     background-color: #e2e6ea;
     color: #000;
     border-color: #ccc;
+}
+
+.empty-products {
+    display: flex;
+    width: 70vw;
+    flex-direction: column;
+    align-items: center;
+}
+
+.empty-products img {
+    width: 250px;
+}
+
+
+.product-card {
+    position: relative;
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 10px;
+    border-radius: 8px;
+    background-color: #fff;
+    cursor: pointer;
+}
+
+.product-card:hover {
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.06) 0px 2px 4px -1px;
+}
+
+.add-to-cart-form {
+    margin-top: 10px;
+}
+
+.add-to-cart-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.add-to-cart-button:hover {
+    background-color: #0056b3;
+}
+
+.add-to-cart-button {
+    position: relative;
+    z-index: 10;
+}
+
+
+.modal-background {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 400px;
+    z-index: 1001;
+}
+
+.modal-header {
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.modal-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #555;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #4F46E5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background-color: #4F46E5;
+    color: white;
+    border: none;
+    width: 100%;
+}
+
+.btn-primary:hover {
+    background-color: #4338CA;
+}
+
+.footer-links {
+    margin-top: 1rem;
+    text-align: center;
+    font-size: 0.875rem;
+}
+
+.footer-links a {
+    color: #4F46E5;
+    text-decoration: none;
+}
+
+.footer-links a:hover {
+    text-decoration: underline;
+}
+
+.close-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+}
+
+.mensaje-bienvenida {
+    text-align: center;
+    font-size: 1.1em;
+    color: var(--color-gris-claro);
+}
+
+.oculto {
+    display: none;
+}
+
+.pedido-resumen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    gap: 15px;
+}
+
+td[colspan="6"] {
+    text-align: right;
+}
+
+td, th {
+    width: 33%;
+    white-space: nowrap;
+}
+button[data-action="restar"] {
+    background-color: #dc3545;
+}
+
+button[data-action="aumentar"] {
+    background-color: #28a745;
+}
+
+form.remove-item-form button {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+button {
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover, a:hover {
+    transform: scale(1.05);
+}
+.botones-container {
+    gap: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#toast {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 20px;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+#toast.show {
+    opacity: 1;
+    visibility: visible;
+}
+.toast.success {
+    background-color: #4CAF50;
+}
+
+.toast.error {
+    background-color: #f44336;
 }
 
 

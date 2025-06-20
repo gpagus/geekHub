@@ -9,6 +9,19 @@ import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
 import java.util.List;
 
+/**
+ * Clase que inicializa la aplicación web configurando datos globales al inicio
+ * y limpieza de recursos al finalizar.
+ *
+ * <p>
+ * Esta clase implementa {@link ServletContextListener} y se encarga de cargar
+ * categorías y marcas disponibles en el contexto de la aplicación al
+ * arrancar.</p>
+ *
+ * <p>
+ * Los datos se eliminan del contexto al finalizar la aplicación.</p>
+ *
+ */
 @WebListener
 public class AppInitializer implements ServletContextListener {
 

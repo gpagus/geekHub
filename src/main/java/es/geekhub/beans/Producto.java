@@ -3,11 +3,17 @@ package es.geekhub.beans;
 import java.io.Serializable;
 
 /**
- *
+ * Representa un producto en la aplicación.
+ * 
+ * Un producto incluye información como su identificador, categoría asociada,
+ * nombre, descripción, precio, marca e imagen.
+ * 
+ * Implementa Serializable para permitir la transferencia y almacenamiento de objetos.
+ * 
  * @author agp00
  */
 public class Producto implements Serializable{
-    private short idProducto;
+    private Short idProducto;
     private Categoria categoria;
     private String nombre;
     private String descripcion;
@@ -15,11 +21,11 @@ public class Producto implements Serializable{
     private String marca;
     private String imagen;
 
-    public short getIdProducto() {
+    public Short getIdProducto() {
         return idProducto;
     }
 
-    public void setIdProducto(short idProducto) {
+    public void setIdProducto(Short idProducto) {
         this.idProducto = idProducto;
     }
 

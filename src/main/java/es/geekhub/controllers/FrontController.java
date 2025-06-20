@@ -1,18 +1,18 @@
 package es.geekhub.controllers;
 
-import es.geekhub.beans.Filtros;
+import es.geekhub.beans.Pedido;
 import es.geekhub.beans.Producto;
+import es.geekhub.beans.Usuario;
+
 import es.geekhub.dao.IProductoDAO;
 import es.geekhub.daofactory.DAOFactory;
 import es.geekhub.models.Utils;
+import es.geekhub.models.UtilsCookie;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.Cookie;
@@ -22,6 +22,31 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 /**
+ * Servlet principal que actúa como un controlador frontal para manejar diversas
+ * acciones en la aplicación web.
+ *
+ * <p>
+ * Gestiona la navegación y las operaciones generales, como el manejo del
+ * carrito, búsqueda de productos, registro, edición de perfil, visualización de
+ * pedidos, cierre de sesión, y detalles de productos.</p>
+ *
+ * <strong>Acciones soportadas:</strong>
+ * <ul>
+ * <li><strong>registro:</strong> Redirige a la página de registro.</li>
+ * <li><strong>carrito:</strong> Redirige a la página del carrito de
+ * compras.</li>
+ * <li><strong>editar:</strong> Redirige a la página de edición de perfil.</li>
+ * <li><strong>pedidos:</strong> Redirige a la gestión de pedidos.</li>
+ * <li><strong>cerrarSesion:</strong> Cierra la sesión del usuario actual.</li>
+ * <li><strong>buscar:</strong> Busca productos según la consulta del
+ * usuario.</li>
+ * <li><strong>verProducto:</strong> Muestra los detalles de un producto
+ * seleccionado.</li>
+ * </ul>
+ *
+ * <p>
+ * Además, inicializa el carrito de compras y carga productos aleatorios en la
+ * sesión si no están disponibles.</p>
  *
  * @author agp00
  */
@@ -34,31 +59,36 @@ public class FrontController extends HttpServlet {
 
         String url = "/JSP/menu.jsp";
         HttpSession session = request.getSession();
-
         DAOFactory daof = new DAOFactory();
-        IProductoDAO daop = daof.getProductoDAO();
-        List<Producto> productos = daop.productosAleatorios();
-        session.setAttribute("productos", productos);
+        Usuario usuario = (Usuario) session.getAttribute("usuario");
+        List<Producto> productos = (List<Producto>) session.getAttribute("productos");
 
-        Cookie[] cookies = request.getCookies();
-        Map<Short, Integer> carrito = null;
+        if (productos == null || productos.isEmpty()) {
 
-        // intentamos cargar el carrito desde la cookie
-        if (carrito == null) {
-            carrito = Utils.cargarCarritoDesdeCookie(cookies);
+            IProductoDAO daop = daof.getProductoDAO();
+            productos = daop.productosAleatorios();
+            session.setAttribute("productos", productos);
         }
 
-        // Si no existe el carrito en la cookie, inicializarlo vacío
-        if (carrito == null) {
-            carrito = new HashMap();
+        Pedido pedido = Utils.obtenerPedidoDeSesion(session, daof);
+
+        if (pedido.getLineasPedidos().isEmpty() && usuario == null) {
+            Cookie[] cookies = request.getCookies();
+            Map<Short, Integer> carritoCookie;
+            carritoCookie = UtilsCookie.cargarCarritoDesdeCookie(cookies);
+            if (carritoCookie == null) {
+                carritoCookie = new HashMap<>();
+            }
+
+            Utils.sincronizarPedidoConCarrito(pedido, carritoCookie);
+
+            pedido.setImporte(Utils.calcularImporteTotal(pedido.getLineasPedidos()));
+            pedido.setIva(pedido.getImporte() * 0.21);
+            session.setAttribute("pedido", pedido);
         }
-
-        // Guardar el carrito en la sesión
-        session.setAttribute("carrito", carrito);
-
-        Utils.actualizarCookie(response, carrito);
 
         request.getRequestDispatcher(url).forward(request, response);
+
     }
 
     @Override
@@ -67,76 +97,66 @@ public class FrontController extends HttpServlet {
         String url = "/JSP/menu.jsp";
         String accion = request.getParameter("accion");
         HttpSession session = request.getSession();
-        // List<Producto> productos = (List<Producto>) request.getSession().getAttribute("productos");
 
         if (accion != null) {
             switch (accion) {
-                case "login":
-                    url = "/JSP/acceso/login.jsp";
-                    break;
                 case "registro":
-                    url = "/JSP/acceso/registro.jsp";
+                    url = "/JSP/registro.jsp";
                     break;
                 case "carrito":
                     url = "/JSP/carrito.jsp";
                     break;
-                case "cuenta":
+                case "editar":
+                    url = "/JSP/perfil/editar.jsp";
                     break;
-                case "limpiar":
-
-                    Map<Short, Integer> carritoVacio = new HashMap();
-
-                    session.setAttribute("carrito", carritoVacio);
-
-                    Utils.actualizarCookie(response, carritoVacio);
+                case "pedidos":
+                    url = "/Pedidos";
                     break;
+                case "cerrarSesion":
+                    session.removeAttribute("usuario");
+                    session.removeAttribute("ultimoAccesoFormateado");
+                    session.removeAttribute("pedido");
 
-                case "filtro":
+                    request.setAttribute("aviso", "Se ha cerrado la sesión");
+                    request.setAttribute("tipoAviso", "success");
+                    break;
+                case "buscar":
+                    String query = request.getParameter("query"); // Obtener la consulta ingresada por el usuario
 
-                    Filtros filtros = new Filtros();
-
-                    // Obtener categorías seleccionadas
-                    filtros.setPriceRange(request.getParameter("price"));
-                    String[] categoriasSeleccionadas = request.getParameterValues("categorias");
-                    String[] marcasSeleccionadas = request.getParameterValues("marcas");
-
-                    if (categoriasSeleccionadas != null) {
-                        List<Byte> idsCategoria = new ArrayList<>();
-                        for (String categoriaId : categoriasSeleccionadas) {
-                            try {
-
-                                Byte categoriaIdByte = Byte.valueOf(categoriaId);  // Parsear el ID de la categoría
-                                idsCategoria.add(categoriaIdByte); // Añadimos
-                            } catch (NumberFormatException e) {
-                                System.out.println("Formato inválido en categoriaSeleccionada: " + categoriaId);
-                            }
-                        }
-                        filtros.setCategorias(idsCategoria); // Setear lista de categorías seleccionadas en el filtro
-                    }
-
-                    if (marcasSeleccionadas != null) {
-                        List<String> marcas = new ArrayList<>();
-                        marcas.addAll(Arrays.asList(marcasSeleccionadas));
-                        filtros.setMarcas(marcas); // Setear lista de marcas seleccionadas en el filtro
-                    }
-
-                    List<Producto> productos;
-
-                    // Obtener DAO de productos
                     DAOFactory daof = new DAOFactory();
                     IProductoDAO daop = daof.getProductoDAO();
-
-                    // Obtener productos filtrados
-                    productos = daop.obtenerProductosPorFiltros(filtros);
-
-                    // Guardar productos y filtros en el request y reenviar a la vista
-                    request.setAttribute("productos", productos);
+                    // Realizar la búsqueda en la base de datos
+                    List<Producto> productosEncontrados = daop.buscarProductos(query);
+                    // Guardar los productos en el request
+                    session.setAttribute("productos", productosEncontrados);
                     break;
 
+                case "verProducto":
+                    String idProductoStr = request.getParameter("idProducto");
+                    Producto productoSeleccionado = null;
+
+                    if (idProductoStr != null) {
+                        Short idProducto = Short.valueOf(idProductoStr);
+                        // Obtener lista de productos de la sesión
+                        List<Producto> productos = (List<Producto>) session.getAttribute("productos");
+                        // Buscar el producto en la lista
+                        if (productos != null) {
+                            for (Producto p : productos) {
+                                if (p.getIdProducto().equals(idProducto)) {
+                                    productoSeleccionado = p;
+                                    break; // Producto encontrado, salimos del bucle
+                                }
+                            }
+                        }
+
+                    }
+
+                    // Guardar el producto seleccionado en la solicitud
+                    request.setAttribute("producto", productoSeleccionado);
+                    url = "/JSP/detalles.jsp";
+                    break;
             }
         }
-
-        request.getRequestDispatcher(url)
-                .forward(request, response);
+        request.getRequestDispatcher(url).forward(request, response);
     }
 }

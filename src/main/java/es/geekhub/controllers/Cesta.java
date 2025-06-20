@@ -1,8 +1,19 @@
 package es.geekhub.controllers;
 
+import es.geekhub.beans.LineaPedido;
+import es.geekhub.beans.Pedido;
+import es.geekhub.beans.Producto;
+import es.geekhub.beans.Usuario;
+import es.geekhub.dao.ILineaPedidoDAO;
+import es.geekhub.dao.IPedidoDAO;
+import es.geekhub.daofactory.DAOFactory;
 import es.geekhub.models.Utils;
+import es.geekhub.models.UtilsCookie;
+
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -13,6 +24,20 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.Cookie;
 
 /**
+ * Servlet que gestiona las operaciones relacionadas con el carrito de compras.
+ *
+ * <p>
+ * Permite realizar las siguientes acciones:</p>
+ * <ul>
+ * <li><strong>add:</strong> Agregar un producto al carrito.</li>
+ * <li><strong>remove:</strong> Eliminar un producto del carrito.</li>
+ * <li><strong>limpiarCarrito:</strong> Vaciar el carrito de compras.</li>
+ * <li><strong>finalizar:</strong> Finalizar y registrar el pedido.</li>
+ * </ul>
+ *
+ * <p>
+ * El carrito puede ser manejado para usuarios registrados o usuarios anónimos
+ * utilizando cookies para sincronizar la información.</p>
  *
  * @author agp00
  */
@@ -22,7 +47,7 @@ public class Cesta extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
+        request.getRequestDispatcher("/JSP/carrito.jsp").forward(request, response);
     }
 
     @Override
@@ -30,33 +55,74 @@ public class Cesta extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = request.getSession();
-        Cookie[] cookies = request.getCookies();
+        DAOFactory daof = new DAOFactory();
+        Usuario usuario = (Usuario) session.getAttribute("usuario");
+        Map<Short, Integer> carrito = new HashMap();
         String url = "/JSP/carrito.jsp";
         String accion = request.getParameter("accion");
-        String idProducto;
 
-        // Obtener el carrito desde la sesión o desde la cookie si no está en sesión
-        Map<Short, Integer> carrito = (Map<Short, Integer>) session.getAttribute("carrito");
-
-        if (carrito == null) {
-            carrito = Utils.cargarCarritoDesdeCookie(cookies);
+        if (usuario == null) {
+            // Obtener el carrito desde las cookies
+            Cookie[] cookies = request.getCookies();
+            carrito = UtilsCookie.cargarCarritoDesdeCookie(cookies);
         }
 
-        if (carrito == null) {
-            carrito = new HashMap<>();
-        }
+        Pedido pedido = Utils.obtenerPedidoDeSesion(session, daof);
 
         switch (accion) {
 
             case "add":
-                idProducto = request.getParameter("idProducto");
-
+                String idProducto = request.getParameter("idProducto");
                 if (idProducto != null) {
-                    try {
-                        short idProductoShort = Short.parseShort(idProducto);
+                    Short idProductoShort = Short.valueOf(idProducto);
 
-                        // Incrementar la cantidad del producto en el carrito o añadirlo con cantidad 1
-                        carrito.put(idProductoShort, carrito.getOrDefault(idProductoShort, 0) + 1);
+                    try {
+                        if (usuario == null) {
+
+                            // Incrementa la cantidad del producto en el carrito o lo añade con cantidad 1
+                            carrito.put(idProductoShort, carrito.getOrDefault(idProductoShort, 0) + 1);
+
+                            Utils.sincronizarPedidoConCarrito(pedido, carrito);
+
+                            pedido.setImporte(Utils.calcularImporteTotal(pedido.getLineasPedidos()));
+                            pedido.setIva(pedido.getImporte() * 0.21);
+
+                            UtilsCookie.actualizarCookie(response, carrito);
+
+                        } else {
+
+                            IPedidoDAO daoPedido = daof.getPedidoDAO();
+                            ILineaPedidoDAO daoLineaPedido = daof.getLineaPedidoDAO();
+
+                            // Agregar o actualizar la línea de pedido
+                            LineaPedido lineaPedido = daoLineaPedido.obtenerLineaPedido(pedido.getIdPedido(), idProductoShort);
+                            if (lineaPedido == null) {
+                                lineaPedido = new LineaPedido();
+                                Producto producto = new Producto();
+                                producto.setIdProducto(idProductoShort);
+                                lineaPedido.setPedido(pedido);
+                                lineaPedido.setProducto(producto);
+                                Byte cantidadInicial = 1;
+                                lineaPedido.setCantidad(cantidadInicial);
+                                daoLineaPedido.guardarLineaPedido(lineaPedido);
+                            } else {
+                                Byte nuevaCantidad = (byte) (lineaPedido.getCantidad() + 1);
+                                lineaPedido.setCantidad(nuevaCantidad);
+                                daoLineaPedido.actualizarLineaPedido(lineaPedido);
+                            }
+
+                            List<LineaPedido> lineas = daoLineaPedido.getLineasPedidoByIdPedido(pedido.getIdPedido());
+                            pedido.setLineasPedidos(lineas);
+
+                            // Recalcular importe e IVA
+                            pedido.setImporte(Utils.calcularImporteTotal(pedido.getLineasPedidos()));
+                            pedido.setIva(pedido.getImporte() * 0.21);
+                            daoPedido.actualizarPedido(pedido);
+                        }
+
+                        session.setAttribute("pedido", pedido);
+                        request.setAttribute("aviso", "Producto añadido al carrito");
+                        request.setAttribute("tipoAviso", "success");
 
                     } catch (NumberFormatException e) {
                         // Manejar el caso donde el ID del producto no es un número válido
@@ -64,46 +130,127 @@ public class Cesta extends HttpServlet {
                     }
                 }
 
-                url = "/FrontController";
+                url = "/JSP/menu.jsp";
 
                 break;
 
             case "remove":
-                idProducto = request.getParameter("idProducto");
 
-                if (idProducto != null) {
+                url = "/JSP/carrito.jsp";
+                String idProductoEliminar = request.getParameter("idProducto");
+
+                if (idProductoEliminar != null) {
                     try {
-                        short idProductoShort = Short.parseShort(idProducto);
+                        // Convertir el idProducto recibido a short
+                        short idProductoShort = Short.parseShort(idProductoEliminar);
 
-                        // Eliminar el producto del carrito si existe
-                        if (carrito.containsKey(idProductoShort)) {
+                        if (usuario == null) {
+
+                            // Eliminar el producto del carrito
                             carrito.remove(idProductoShort);
-                            if (carrito.isEmpty()) url = "/FrontController";
+                            if (carrito.isEmpty()) {
+                                url = "/FrontController";
+                            }
+
+                            // Actualizar la cookie del carrito
+                            UtilsCookie.actualizarCookie(response, carrito);
+
+                            List<LineaPedido> lineasPedidos = pedido.getLineasPedidos();
+                            for (Iterator<LineaPedido> iterator = lineasPedidos.iterator(); iterator.hasNext();) {
+                                LineaPedido linea = iterator.next();
+                                if (linea.getProducto().getIdProducto() == idProductoShort) {
+                                    iterator.remove();
+                                }
+                            }
+
+                            // Recalcular el importe e IVA
+                            pedido.setImporte(Utils.calcularImporteTotal(pedido.getLineasPedidos()));
+                            pedido.setIva(pedido.getImporte() * 0.21);
+
                         } else {
-                            // Manejar el caso donde el producto no está en el carrito
-                            request.setAttribute("error", "El producto no existe en el carrito.");
+
+                            IPedidoDAO daoPedido = daof.getPedidoDAO();
+                            ILineaPedidoDAO daoLineaPedido = daof.getLineaPedidoDAO();
+
+                            daoLineaPedido.eliminarLineaPedido(pedido.getIdPedido(), idProductoShort);
+
+                            List<LineaPedido> lineas = daoLineaPedido.getLineasPedidoByIdPedido(pedido.getIdPedido());
+                            pedido.setLineasPedidos(lineas);
+
+                            pedido.setImporte(Utils.calcularImporteTotal(pedido.getLineasPedidos()));
+                            pedido.setIva(pedido.getImporte() * 0.21);
+                            daoPedido.actualizarPedido(pedido);
+
+                            if (lineas.isEmpty()) {
+                                url = "/JSP/menu.jsp";
+                            }
+
                         }
 
+                        // Actualizar el pedido en la sesión
+                        session.setAttribute("pedido", pedido);
+                        request.setAttribute("aviso", "Producto eliminado al carrito");
+                        request.setAttribute("tipoAviso", "success");
+
                     } catch (NumberFormatException e) {
-                        // Manejar el caso donde el ID del producto no es un número válido
+                        // Manejar el caso donde el ID del producto no sea válido
                         request.setAttribute("error", "ID de producto inválido.");
                     }
                 }
                 break;
 
-            case "checkout":
+            case "limpiarCarrito":
+                if (usuario == null) {
+                    Map<Short, Integer> carritoVacio = new HashMap();
+                    UtilsCookie.actualizarCookie(response, carritoVacio);
+                } else {
+                    IPedidoDAO daoPedido = daof.getPedidoDAO();
+                    daoPedido.eliminarPedido(pedido.getIdPedido());
+                }
+                session.removeAttribute("pedido");
+                request.setAttribute("aviso", "Se ha vaciado el carrito");
+                request.setAttribute("tipoAviso", "success");
+                url = "/JSP/menu.jsp";
+                break;
+
+            case "finalizar":
+                if (usuario != null) {
+                    IPedidoDAO daoPedido = daof.getPedidoDAO();
+
+                    // Finalizar pedido en base de datos
+                    daoPedido.finalizarPedido(pedido.getIdPedido());
+
+                    // Limpiar pedido de la sesión
+                    session.removeAttribute("pedido");
+
+                    request.setAttribute("aviso", "Compra realizada");
+                    request.setAttribute("tipoAviso", "success");
+
+                    url = "/JSP/menu.jsp";
+                }
+                break;
+
+            // Redirección usuario logueado para sincronizar el pedido de la sesión con la bbdd
+            default:
+
+                IPedidoDAO daoPedido = daof.getPedidoDAO();
+                ILineaPedidoDAO daoLineaPedido = daof.getLineaPedidoDAO();
+
+                List<LineaPedido> lineas = daoLineaPedido.getLineasPedidoByIdPedido(pedido.getIdPedido());
+                pedido.setLineasPedidos(lineas);
+
+                // Recalcular importe e IVA
+                pedido.setImporte(Utils.calcularImporteTotal(pedido.getLineasPedidos()));
+                pedido.setIva(pedido.getImporte() * 0.21);
+                daoPedido.actualizarPedido(pedido);
+
+                session.setAttribute("pedido", pedido);
+                url = "/JSP/menu.jsp";
 
                 break;
 
         }
 
-        // Actualizar el carrito en la sesión
-        session.setAttribute("carrito", carrito);
-
-        // Actualizar la cookie del carrito
-        Utils.actualizarCookie(response, carrito);
-
-        // Redirigir internamente al FrontController
         request.getRequestDispatcher(url).forward(request, response);
 
     }
